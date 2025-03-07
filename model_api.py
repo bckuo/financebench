@@ -31,25 +31,24 @@ def sleep_if_reach_RPM(rpm: int, timestamp: float) -> None:
     return time.time()
 
 
-def sleep_if_reach_TPM(tpm: int, context_tokens: int, token_usage: Deque[Tuple[float, int]]) -> None:
+def sleep_if_reach_TPM(tpm: int, tokens: int, prompt_logs: Deque[Tuple[float, int]]) -> None:
 
-    tokens = context_tokens
-    exceeded_limit_usage = None
-    for usage in token_usage:
-        tokens += usage[1]
+    timeout = None
+    for time_log, token_log in prompt_logs:
+        tokens += token_log
         if tokens > tpm:
-            exceeded_limit_usage = usage
+            timeout = time_log
             break
 
-    if exceeded_limit_usage:
-        required_sleep_duration = 60 - (time.time() - exceeded_limit_usage[0])
-        if required_sleep_duration > 0:
-            print(f"[TPM] Sleeping for {required_sleep_duration} seconds")
-            time.sleep(required_sleep_duration)
+    if timeout:
+        wait_for_expiration = 60 - (time.time() - timeout)
+        if wait_for_expiration > 0:
+            print(f"[TPM] Sleeping for {wait_for_expiration} seconds")
+            time.sleep(wait_for_expiration)
         # Remove all token usages until the last exceeded limit
-        usage = token_usage.pop()
-        while usage != exceeded_limit_usage:
-            usage = token_usage.pop()
+        time_log, _ = prompt_logs.pop()
+        while time_log != timeout:
+            time_log, _ = prompt_logs.pop()
 
 
 def get_max_context_length(prompt, anthropic_cutoff=47500, openai_cutoff=57000):
@@ -107,7 +106,7 @@ def get_answer(
     context: str,
     retriever: RetrievalQA,
     timestamp: float,
-    token_usage: Deque[Tuple[float, int]],
+    prompt_logs: Deque[Tuple[float, int]],
 ) -> str:
 
     timestamp = sleep_if_reach_RPM(RPM[provider], timestamp)
@@ -130,12 +129,12 @@ def get_answer(
         else:
             prompt = f"Context:\n[START OF FILING] {context} [END OF FILING]\n\n Answer this question: {question}\n"
 
-        sleep_if_reach_TPM(TPM[provider], context_tokens, token_usage)
+        sleep_if_reach_TPM(TPM[provider], context_tokens, prompt_logs)
         timestamp = time.time()
 
         answer = model.invoke(prompt)
 
-        token_usage.appendleft((time.time(), context_tokens))
+        prompt_logs.appendleft((time.time(), context_tokens))
 
     elif eval_mode == "oracle":
         prompt = f"Answer this question: {question} \nHere is the relevant evidence that you need to answer the question:\n[START OF FILING] {context} [END OF FILING]"

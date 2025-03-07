@@ -89,7 +89,7 @@ def evaluate(model_config: Dict, df_questions: pd.DataFrame):
 
     last_docs = None
     last_timestamp = 0
-    token_usage = deque()
+    prompt_logs = deque()
     results = []
 
     # Run evaluation on the model  --> Sort along doc_name to reuse retriever configs in memory
@@ -138,7 +138,7 @@ def evaluate(model_config: Dict, df_questions: pd.DataFrame):
             context=context,
             retriever=retriever,
             timestamp=last_timestamp,
-            token_usage=token_usage,
+            prompt_logs=prompt_logs,
         )
 
         # (C) Bookkeeping
