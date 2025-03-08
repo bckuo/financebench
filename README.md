@@ -50,7 +50,7 @@ with main in `evaluation.py`.
 The purposes of other py script are: <br>
     + `test_sleep.py` : Unit test of the sleep functions that prevent TPM and RPM reaching limit. <br>
     + `prepare_data.py` : Split orginal QA set to 5 groups, or merge partial of them to scale up QA. <br>
-    + `results_manager.py` : Can split, merge, and sort results. 
+    + `results_manager.py` : Can split, merge, and sort results. <br>
     + `plot.py` : plot the data
 
 
