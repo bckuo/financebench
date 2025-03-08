@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-from typing import List, Dict
+from typing import List, Tuple
 
 ##############################################################################
 # DATASET CONFIG
@@ -25,7 +25,7 @@ RESULTS_GROUP_PATH = [PATH_CURRENT + f"/results/group_{i}/" for i in range(N_GRO
 RESULTS_PATH = PATH_CURRENT + "/results/"
 
 
-def load_dataset() -> List[pd.DataFrame]:
+def load_dataset() -> Tuple[pd.DataFrame, List[pd.DataFrame]]:
 
     df_questions = pd.read_json(PATH_DATASET_JSONL, lines=True)
     path_dataset_partial = [f"{PATH_CURRENT}/{PATH_DATASET_PREFIX}_group_{i}.jsonl" for i in range(N_GROUPS)]
@@ -83,12 +83,38 @@ def save_group_results_in_all(model: str, eval_mode: str, g_idx: int, df_questio
     df_group.to_json(RESULTS_GROUP_PATH[g_idx] + f"{config}_group_{g_idx}_.jsonl", orient="records", lines=True)
 
 
+def results_to_json(model: str, eval_mode: str, g_idx: int):
+
+    config = f"{model}_{eval_mode}"
+
+    df = pd.read_json(RESULTS_GROUP_PATH[g_idx] + f"{config}_group_{g_idx}.jsonl", lines=True)
+    df.to_json(RESULTS_GROUP_PATH[g_idx] + f"{config}_group_{g_idx}.json", orient="records")
+
+
+MODELS = ["gpt-4o-mini", "claude-3-5-haiku-20241022"]
+EVAL_MODE = [
+    "closedBook",
+    "oracle",
+    "oracle_reverse",
+    "inContext",
+    "inContext_reverse",
+    "singleStore",
+    "sharedStore",
+]
+
 def main():
     df_questions, df_question_groups = load_dataset()
-    
-    # save_group_results_in_all("claude-3-5-haiku-20241022", "closedBook", 0, df_question_groups)
-    save_group_results_in_all("gpt-4o-mini", "closedBook", 0, df_question_groups)
 
+    # save_group_results_in_all("claude-3-5-haiku-20241022", "closedBook", 0, df_question_groups)
+    # save_group_results_in_all("gpt-4o-mini", "closedBook", 0, df_question_groups)
+
+    for model in MODELS:
+        for eval_mode in EVAL_MODE:
+            results_to_json(model, eval_mode, 0)
+
+    _, df_question_groups = load_dataset()
+    df_question_groups[0].sort_values("financebench_id")
+    df_question_groups[0].to_json(f"{PATH_CURRENT}/{PATH_DATASET_PREFIX}_group_0.json", orient="records")
 
 if __name__ == "__main__":
     main()
