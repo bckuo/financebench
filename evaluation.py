@@ -27,13 +27,19 @@
 # ```
 #
 #
+import warnings
+from langchain._api import LangChainDeprecationWarning
+from pymupdf import FitzDeprecation
+
+warnings.simplefilter("ignore", category=LangChainDeprecationWarning)
+warnings.simplefilter("ignore", category=FitzDeprecation)
 
 import pandas as pd
 import time
 
 from typing import Dict, List, Tuple
 from collections import deque
-from tqdm.notebook import tqdm
+from tqdm import tqdm
 
 from model_api import get_model, get_answer
 from helper import get_pdf_text, build_vectorstore_retriever
@@ -45,6 +51,7 @@ from global_var import PATH_DATASET_JSONL, PATH_DOCUMENT_INFO_JSONL, DATASET_POR
 # LOAD DATASET
 ##############################################################################
 def load_dataset() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, List[str]]:
+    print("-------------------------------------------------")
 
     # Load Full Dataset
     df_questions = pd.read_json(PATH_DATASET_JSONL, lines=True)
@@ -66,6 +73,7 @@ def load_dataset() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, List[str]]
     df_questions = df_questions.sort_values("doc_name")
     docs = df_questions["doc_name"].unique().tolist()
     print(f"Number of distinct PDF: {len(docs)}")
+    print("-------------------------------------------------")
     return df_questions, df_meta, df_full
 
 
